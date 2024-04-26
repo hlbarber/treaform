@@ -222,8 +222,7 @@ fn main() -> anyhow::Result<()> {
     let tree = Tree::new(root_node).with_leaves(
         show.configuration
             .root_module
-            .into_trees(&terraform_dir, terraform_dir.clone())
-            .into_iter(),
+            .into_trees(&terraform_dir, terraform_dir.clone()),
     );
     print!("{tree}");
 
