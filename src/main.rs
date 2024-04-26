@@ -69,7 +69,12 @@ impl<'a> Module<'a> {
                 let source = parent
                     .canonicalize()
                     .expect("terraform provided incorrect path");
-                let _ = source.strip_prefix(base);
+                let source = if let Ok(source) = source.strip_prefix(base) {
+                    source.to_owned()
+                } else {
+                    source
+                };
+                println!("{source:?}");
                 let tree = Tree::new(TreeNode {
                     name,
                     count: value.count_expression.map(|x| x.constant_value),
@@ -112,7 +117,6 @@ struct TreeNode<'a> {
 impl fmt::Display for TreeNode<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let path: PathBuf = self.source.iter().collect();
-        let path = path.canonicalize().map_err(|_| fmt::Error)?;
         f.write_str(self.name)?;
         if let Some(index) = self.count {
             write!(f, "[{index}]")?;
@@ -127,7 +131,7 @@ impl fmt::Display for TreeNode<'_> {
             }
             f.write_char('}')?;
         }
-        write!(f, " ({})", path.to_str().ok_or(fmt::Error)?)
+        write!(f, " (./{})", path.to_str().ok_or(fmt::Error)?)
     }
 }
 
@@ -213,7 +217,7 @@ fn main() -> anyhow::Result<()> {
         name: "*",
         count: None,
         for_each: None,
-        source: terraform_dir.clone(),
+        source: PathBuf::new(),
     };
     let tree = Tree::new(root_node).with_leaves(
         show.configuration
